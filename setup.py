@@ -24,6 +24,7 @@ INSTALL_REQUIRES = [
     'dgp',
     'gunicorn',
     'aiohttp',
+    'dataflows'
 ]
 LINT_REQUIRES = [
     'pylama',

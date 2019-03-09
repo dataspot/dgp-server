@@ -28,7 +28,7 @@ from .row_sender import post_flow
 from dataflows.helpers.extended_json import ejson as json
 
 tableschema_sql.writer.BUFFER_SIZE = 100
-BASE_PATH = os.environ.get('BASE_PATH', '/var/datapip.es')
+BASE_PATH = os.environ.get('BASE_PATH', '/var/dgp')
 
 
 def path_for_uid(uid, *args):
