@@ -24,6 +24,7 @@ INSTALL_REQUIRES = [
     'dgp',
     'gunicorn',
     'aiohttp',
+    'aiohttp_sse',
     'dataflows'
 ]
 LINT_REQUIRES = [
