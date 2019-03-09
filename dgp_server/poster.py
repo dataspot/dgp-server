@@ -30,3 +30,11 @@ class Poster():
             e=errors,
             uid=self.uid,
         ))
+
+    async def post_row_count(self, phase, index):
+        await self.send(dict(
+            t='n',
+            j=phase,
+            i=index,
+            uid=self.uid,
+        ))

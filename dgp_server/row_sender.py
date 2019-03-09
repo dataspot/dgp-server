@@ -53,6 +53,8 @@ def row_sender(phase, poster: Poster, tasks):
                 if ls(i):
                     tasks.append(poster.post_row(phase, i, row))
                     max_sent = i
+                elif i % 100 == 0:
+                    tasks.append(poster.post_row_count(phase, i))
                 yield row
             for i, row in buffer:
                 if i > max_sent:
