@@ -25,7 +25,8 @@ INSTALL_REQUIRES = [
     'gunicorn',
     'aiohttp',
     'aiohttp_sse',
-    'dataflows'
+    'dataflows',
+    'psycopg2'
 ]
 LINT_REQUIRES = [
     'pylama',
