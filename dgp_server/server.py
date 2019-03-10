@@ -54,9 +54,9 @@ def get_engine() -> Engine:
     global _engine
     if _engine is None:
         if 'DATABASE_URL' in os.environ:
-            print('CREATING ENGINE')
+            logging.info('CREATING ENGINE')
             _engine = create_engine(os.environ['DATABASE_URL'])
-            print('DONE')
+            logging.info('DONE')
     return _engine
 
 
@@ -68,9 +68,9 @@ def clear_by_source(engine: Engine, table_name, source):
                 with engine.connect() as conn:
                     s = text("delete from %s where _source=:source" % table_name)
                     try:
-                        print('DELETING PAST ROWS')
+                        logging.info('DELETING PAST ROWS')
                         conn.execute(s, source=source)
-                        print('DONE DELETING')
+                        logging.info('DONE DELETING')
                     except ProgrammingError as e:
                         logging.error('Failed to remove rows %s', e)
             yield resource
@@ -151,9 +151,9 @@ async def events(request: web.Request):
 
                 try:
                     ret = dgp.analyze()
-                    print('ANALYZED')
-                    print(config._unflatten()['source'])
-                    print(config._unflatten()['structure'])
+                    logging.info('ANALYZED')
+                    logging.info('%r', config._unflatten()['source'])
+                    logging.info('%r', config._unflatten()['structure'])
                     if config.dirty:
                         await poster.post_config(config._unflatten())
                     if not ret:
@@ -212,5 +212,7 @@ app.router.add_route('GET', '/events/{uid}', events)
 app.router.add_route('POST', '/config', config)
 app.router.add_route('OPTIONS', '/config', config_options)
 
+logging.getLogger().setLevel(logging.INFO)
+
 if __name__ == "__main__":
-    web.run_app(app, host='127.0.0.1', port=8000)
+    web.run_app(app, host='127.0.0.1', port=8000, access_log=logging.getLogger())
