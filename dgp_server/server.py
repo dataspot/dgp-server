@@ -160,7 +160,7 @@ async def events(request: web.Request):
                         await poster.post_errors(list(map(list, dgp.errors)))
 
                     dgp.post_flows = [
-                        post_flow(0, poster, tasks, config, cache=True),
+                        post_flow(0, poster, tasks, config, cache=False),
                         post_flow(1, poster, tasks, config),
                         post_flow(2, poster, tasks, config),
                     ]
