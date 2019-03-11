@@ -89,6 +89,15 @@ def buffer(num):
     return func
 
 
+def append_to_primary_key(*fields):
+    def func(package):
+        res = package.pkg.resources[-1]
+        schema = res.descriptor.get('schema', {})
+        schema.setdefault('primaryKey', []).extend(fields)
+        yield package.pkg
+        yield from package
+
+
 def publish_flow(config):
     engine = get_engine()
     table_name = config.get(CONFIG_TAXONOMY_ID).replace('-', '_')
@@ -107,6 +116,7 @@ def publish_flow(config):
                 ],
                 resources=RESOURCE_NAME
             ),
+            append_to_primary_key('_source'),
             buffer(1000),
             clear_by_source(engine, table_name, source),
             dump_to_sql(
