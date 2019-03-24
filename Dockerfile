@@ -9,7 +9,9 @@ RUN apk --update --no-cache --virtual=build-dependencies add \
 
 RUN mkdir -p /var/dgp
 
+ENV SERVER_MODULE=dgp_server.server:app
+
 EXPOSE 8000
 
-CMD gunicorn -t 180 --bind 0.0.0.0:8000 dgp_server.server:app --worker-class aiohttp.GunicornWebWorker
+CMD gunicorn -t 180 --bind 0.0.0.0:8000 ${SERVER_MODULE} --worker-class aiohttp.GunicornWebWorker
 
