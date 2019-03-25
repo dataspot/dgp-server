@@ -96,7 +96,7 @@ class DgpServer(web.Application):
                             post_flow(2, poster, tasks, config),
                         ]
                         dgp.publish_flow = Flow(
-                            publish_flow(config),
+                            publish_flow(config, self.engine),
                             post_flow(3, poster, tasks, config)
                         )
                         flow = dgp.flow()
