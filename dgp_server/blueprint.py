@@ -51,6 +51,9 @@ class DgpServer(web.Application):
         return func
 
     # Flows aux
+    def publish_flow(self, config):
+        return publish_flow(config, self.engine)
+
     async def run_flow(self, flow, tasks):
         ds = flow.datastream()
         for res in ds.res_iter:
@@ -96,7 +99,7 @@ class DgpServer(web.Application):
                             post_flow(2, poster, tasks, config),
                         ]
                         dgp.publish_flow = Flow(
-                            publish_flow(config, self.engine),
+                            self.publish_flow(config),
                             post_flow(3, poster, tasks, config)
                         )
                         flow = dgp.flow()
