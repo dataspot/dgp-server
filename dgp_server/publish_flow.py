@@ -28,17 +28,6 @@ def clear_by_source(engine: Engine, table_name, source):
     return func
 
 
-def buffer(num):
-    def func(rows):
-        _buf = []
-        for row in rows:
-            _buf.append(row)
-            if len(_buf) > num:
-                yield _buf.pop(0)
-        yield from _buf
-    return func
-
-
 def append_to_primary_key(*fields):
     def func(package):
         res = package.pkg.resources[-1]
@@ -67,7 +56,6 @@ def publish_flow(config, engine):
                 resources=RESOURCE_NAME
             ),
             append_to_primary_key('_source'),
-            buffer(1000),
             clear_by_source(engine, table_name, source),
             dump_to_sql(
                 dict([
