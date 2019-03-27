@@ -21,7 +21,7 @@ def read(*paths):
 PACKAGE = 'dgp_server'
 NAME = PACKAGE.replace('_', '-')
 INSTALL_REQUIRES = [
-    'dgp',
+    'dgp>=0.0.6',
     'gunicorn',
     'aiohttp',
     'aiohttp_sse',

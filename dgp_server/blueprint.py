@@ -51,7 +51,7 @@ class DgpServer(web.Application):
         return func
 
     # Flows aux
-    def publish_flow(self, config):
+    def publish_flow(self, config, context):
         return publish_flow(config, self.engine)
 
     async def run_flow(self, flow, tasks):
@@ -99,7 +99,7 @@ class DgpServer(web.Application):
                             post_flow(2, poster, tasks, config),
                         ]
                         dgp.publish_flow = Flow(
-                            self.publish_flow(config),
+                            self.publish_flow(config, context),
                             post_flow(3, poster, tasks, config)
                         )
                         flow = dgp.flow()
