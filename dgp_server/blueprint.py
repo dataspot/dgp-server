@@ -4,6 +4,9 @@ import os
 import logging
 import yaml
 
+import tableschema_sql
+tableschema_sql.writer.BUFFER_SIZE = 10
+
 from dataflows import Flow
 
 from aiohttp import web
@@ -11,7 +14,6 @@ from aiohttp_sse import sse_response
 
 from sqlalchemy import create_engine
 
-import tableschema_sql
 
 from dgp.core import Config, Context
 from dgp.genera.simple import SimpleDGP
@@ -23,7 +25,6 @@ from .publish_flow import publish_flow
 
 from dataflows.helpers.extended_json import ejson as json
 
-tableschema_sql.writer.BUFFER_SIZE = 10
 
 
 class DgpServer(web.Application):

@@ -7,6 +7,7 @@ from dataflows import Flow, schema_validator, ValidationError, checkpoint
 
 
 from dgp.core import Config
+from dgp.genera.consts import RESOURCE_NAME
 
 from .poster import Poster
 
@@ -37,9 +38,9 @@ def row_sender(phase, poster: Poster, tasks):
     ls = LineSelector()
 
     def func(package):
-        field_names = [f['name']
-                       for f in
-                       package.pkg.resources[-1].descriptor['schema']['fields']]
+        resource = next(iter(filter(lambda res: res.name == RESOURCE_NAME, 
+                                    package.pkg.resources)))
+        field_names = [f.name for f in resource.schema.fields]
         tasks.append(poster.post_row(phase, -1, field_names))
         yield package.pkg
 
@@ -53,7 +54,7 @@ def row_sender(phase, poster: Poster, tasks):
                 if ls(i):
                     tasks.append(poster.post_row(phase, i, row))
                     max_sent = i
-                elif i % 100 == 0:
+                elif i % 10 == 0:
                     tasks.append(poster.post_row_count(phase, i))
                 yield row
             for i, row in buffer:
@@ -61,7 +62,7 @@ def row_sender(phase, poster: Poster, tasks):
                     tasks.append(poster.post_row(phase, i, row))
 
         for i, rows in enumerate(package):
-            if i == len(package.pkg.resources) - 1:
+            if package.pkg.resources[i].name == RESOURCE_NAME:
                 yield sender(rows)
             else:
                 yield rows
