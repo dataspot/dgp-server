@@ -26,7 +26,7 @@ INSTALL_REQUIRES = [
     'aiohttp',
     'aiohttp_sse',
     'dataflows',
-    'psycopg2'
+    'psycopg2-binary'
 ]
 LINT_REQUIRES = [
     'pylama',
