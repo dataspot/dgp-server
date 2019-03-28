@@ -39,6 +39,8 @@ def append_to_primary_key(*fields):
 
 
 def publish_flow(config, engine):
+    if not config.get(CONFIG_TAXONOMY_ID):
+        return Flow()
     table_name = config.get(CONFIG_TAXONOMY_ID).replace('-', '_')
     source = config.get(CONFIG_URL)
     if CONFIG_SHEET in config:
