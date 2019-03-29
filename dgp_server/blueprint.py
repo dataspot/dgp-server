@@ -54,11 +54,11 @@ class DgpServer(web.Application):
 
     # Flows aux
     def publish_flow(self, config, context):
-x        if not config.get(CONFIG_PUBLISH_ALLOWED):
+        if not config.get(CONFIG_PUBLISH_ALLOWED):
             return None
         if self.engine is None:
             self.engine = create_engine(self.db_url)
-       return publish_flow(config, self.engine)
+        return publish_flow(config, self.engine)
 
     async def run_flow(self, flow, tasks):
         ds = flow.datastream()
