@@ -34,7 +34,7 @@ def append_to_primary_key(*fields):
         res = None
         for r in package.pkg.resources:
             if r.name == RESOURCE_NAME:
-                r = res
+                res = r
         assert res is not None
         schema = res.descriptor.get('schema', {})
         schema.setdefault('primaryKey', []).extend(fields)
