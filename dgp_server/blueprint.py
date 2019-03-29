@@ -18,6 +18,7 @@ from sqlalchemy import create_engine
 
 from dgp.core import Config, Context
 from dgp.genera.simple import SimpleDGP
+from dgp.genera.consts import CONFIG_PUBLISH_ALLOWED
 from dgp.taxonomies import TaxonomyRegistry
 
 from .poster import Poster
