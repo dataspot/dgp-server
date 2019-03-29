@@ -32,12 +32,13 @@ def clear_by_source(engine: Engine, table_name, source):
 def append_to_primary_key(*fields):
     def func(package):
         res = None
-        for r in package.pkg.resources:
-            if r.name == RESOURCE_NAME:
+        for r in package.pkg.descriptor['resources']:
+            if r['name'] == RESOURCE_NAME:
                 res = r
         assert res is not None
-        schema = res.descriptor.get('schema', {})
+        schema = res.get('schema', {})
         schema.setdefault('primaryKey', []).extend(fields)
+        print('NEW PRIMARY KEY', package.pkg.descriptor)
         yield package.pkg
         yield from package
     return func
