@@ -21,6 +21,13 @@ class Poster():
             uid=self.uid,
         ))
 
+    async def post_failure(self, message):
+        await self.send(dict(
+            t='f',
+            e=message,
+            uid=self.uid,
+        ))
+
     async def post_row(self, phase, index, row, errors=None):
         await self.send(dict(
             t='r',

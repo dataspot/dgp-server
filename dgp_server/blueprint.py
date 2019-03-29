@@ -3,6 +3,7 @@ import uuid
 import os
 import logging
 import yaml
+import traceback
 
 import tableschema_sql
 tableschema_sql.writer.BUFFER_SIZE = 10
@@ -24,7 +25,6 @@ from .row_sender import post_flow
 from .publish_flow import publish_flow
 
 from dataflows.helpers.extended_json import ejson as json
-
 
 
 class DgpServer(web.Application):
@@ -99,14 +99,18 @@ class DgpServer(web.Application):
                             post_flow(1, poster, tasks, config),
                             post_flow(2, poster, tasks, config),
                         ]
-                        dgp.publish_flow = Flow(
-                            self.publish_flow(config, context),
-                            post_flow(3, poster, tasks, config)
-                        )
+                        pf = self.publish_flow(config, context)
+                        if pf is not None:
+                            pf = Flow(pf, post_flow(3, poster, tasks, config))
+                        else:
+                            pf = Flow()
+                        dgp.publish_flow = pf
                         flow = dgp.flow()
 
                         await self.run_flow(flow, tasks)
-
+                    except Exception as e:
+                        await poster.post_failure(traceback.format_exc())
+                        raise
                     finally:
                         for task in tasks:
                             await asyncio.gather(task)
