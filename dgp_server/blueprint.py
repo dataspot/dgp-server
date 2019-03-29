@@ -37,7 +37,8 @@ class DgpServer(web.Application):
     def __init__(self, base_path, db_url):
         super().__init__()
         self.base_path = base_path
-        self.engine = create_engine(db_url)
+        self.db_url = db_url
+        self.engine = None`
         self.router.add_route('GET', '/events/{uid}', self.events)
         self.router.add_route('POST', '/config', self.config)
         self.router.add_route('OPTIONS', '/config', self.config_options)
@@ -53,7 +54,11 @@ class DgpServer(web.Application):
 
     # Flows aux
     def publish_flow(self, config, context):
-        return publish_flow(config, self.engine)
+x        if not config.get(CONFIG_PUBLISH_ALLOWED):
+            return None
+        if self.engine is None:
+            self.engine = create_engine(self.db_url)
+       return publish_flow(config, self.engine)
 
     async def run_flow(self, flow, tasks):
         ds = flow.datastream()
