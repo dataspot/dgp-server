@@ -38,7 +38,7 @@ class DgpServer(web.Application):
         super().__init__()
         self.base_path = base_path
         self.db_url = db_url
-        self.engine = None`
+        self.engine = None
         self.router.add_route('GET', '/events/{uid}', self.events)
         self.router.add_route('POST', '/config', self.config)
         self.router.add_route('OPTIONS', '/config', self.config_options)
