@@ -60,6 +60,7 @@ def row_sender(phase, poster: Poster, tasks):
             for i, row in buffer:
                 if i > max_sent:
                     tasks.append(poster.post_row(phase, i, row))
+            tasks.append(poster.post_done(phase))
 
         for i, rows in enumerate(package):
             if package.pkg.resources[i].name == RESOURCE_NAME:

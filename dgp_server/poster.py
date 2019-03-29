@@ -45,3 +45,10 @@ class Poster():
             i=index,
             uid=self.uid,
         ))
+
+    async def post_done(self, phase):
+        await self.send(dict(
+            t='d',
+            j=phase,
+            uid=self.uid,
+        ))
