@@ -7,7 +7,7 @@ from sqlalchemy.sql import text
 
 from dataflows import Flow, add_computed_field, dump_to_sql
 
-from dgp.genera.consts import CONFIG_TAXONOMY_ID, CONFIG_SHEET, RESOURCE_NAME, \
+from dgp.config.consts import CONFIG_TAXONOMY_ID, CONFIG_SHEET, RESOURCE_NAME, \
     CONFIG_URL, CONFIG_PUBLISH_ALLOWED
 
 

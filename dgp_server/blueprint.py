@@ -16,9 +16,9 @@ from aiohttp_sse import sse_response
 from sqlalchemy import create_engine
 
 
-from dgp.core import Config, Context
-from dgp.genera.simple import SimpleDGP
-from dgp.genera.consts import CONFIG_PUBLISH_ALLOWED
+from dgp.core import Config, Context, BaseDataGenusProcessor
+from dgp.genera import SimpleDGP, LoaderDGP, TransformDGP, EnricherDGP
+from dgp.config.consts import CONFIG_PUBLISH_ALLOWED
 from dgp.taxonomies import TaxonomyRegistry
 
 from .poster import Poster
@@ -26,6 +26,37 @@ from .row_sender import post_flow
 from .publish_flow import publish_flow
 
 from dataflows.helpers.extended_json import ejson as json
+
+
+class ResultsPoster(BaseDataGenusProcessor):
+
+    def __init__(self, config, context, id, poster, tasks):
+        super().__init__(config, context)
+        self.id = id
+        self.poster = poster
+        self.tasks = tasks
+
+    def flow(self):
+        return post_flow(self.id, self.poster, self.tasks, self.config)
+
+
+class PublishFlow(ResultsPoster):
+
+    def __init__(self, config, context, lazy_engine, id, poster, tasks):
+        super().__init__(config, context, id, poster, tasks)
+        self.id = id
+        self.poster = poster
+        self.tasks = tasks
+        self.lazy_engine = lazy_engine
+
+    def flow(self):
+        if not self.config.get(CONFIG_PUBLISH_ALLOWED):
+            return None
+        if self.lazy_engine() is not None:
+            return Flow(
+                publish_flow(self.config, self.lazy_engine()),
+                super().flow()
+            )
 
 
 class DgpServer(web.Application):
@@ -39,10 +70,11 @@ class DgpServer(web.Application):
         super().__init__()
         self.base_path = base_path
         self.db_url = db_url
-        self.engine = None
         self.router.add_route('GET', '/events/{uid}', self.events)
         self.router.add_route('POST', '/config', self.config)
         self.router.add_route('OPTIONS', '/config', self.config_options)
+        self._publish_flow = None
+        self.engine = None
 
     # Utils:
     def path_for_uid(self, uid, *args):
@@ -54,13 +86,6 @@ class DgpServer(web.Application):
         return func
 
     # Flows aux
-    def publish_flow(self, config, context):
-        if not config.get(CONFIG_PUBLISH_ALLOWED):
-            return None
-        if self.engine is None:
-            self.engine = create_engine(self.db_url)
-        return publish_flow(config, self.engine)
-
     async def run_flow(self, flow, tasks):
         ds = flow.datastream()
         for res in ds.res_iter:
@@ -68,6 +93,19 @@ class DgpServer(web.Application):
                 while len(tasks) > 0:
                     task = tasks.pop(0)
                     await asyncio.gather(task)
+
+    def publish_flow(self, config, context):
+        return [
+            self._publish_flow
+        ]
+
+    def lazy_engine(self):
+        def func():
+            if self.engine is None:
+                if self.db_url is not None:
+                    self.engine = create_engine(self.db_url)
+            return self.engine
+        return func
 
     # Routes:
     async def events(self, request: web.Request):
@@ -86,8 +124,20 @@ class DgpServer(web.Application):
                     poster = Poster(uid, self.sender(resp))
 
                     tasks = []
+                    self._publish_flow = \
+                        PublishFlow(config, context, self.lazy_engine(),
+                                    3, poster, tasks)
                     dgp = SimpleDGP(
                         config, context,
+                        steps=[
+                            LoaderDGP,
+                            ResultsPoster(config, context, 0, poster, tasks),
+                            TransformDGP,
+                            ResultsPoster(config, context, 1, poster, tasks),
+                            EnricherDGP,
+                            ResultsPoster(config, context, 2, poster, tasks),
+                            *self.publish_flow(config, context),
+                        ]
                     )
 
                     try:
@@ -100,21 +150,10 @@ class DgpServer(web.Application):
                         if not ret:
                             await poster.post_errors(list(map(list, dgp.errors)))
 
-                        dgp.post_flows = [
-                            post_flow(0, poster, tasks, config, cache=False),
-                            post_flow(1, poster, tasks, config),
-                            post_flow(2, poster, tasks, config),
-                        ]
-                        pf = self.publish_flow(config, context)
-                        if pf is not None:
-                            pf = Flow(pf, post_flow(3, poster, tasks, config))
-                        else:
-                            pf = Flow()
-                        dgp.publish_flow = pf
                         flow = dgp.flow()
 
                         await self.run_flow(flow, tasks)
-                    except Exception as e:
+                    except Exception:
                         await poster.post_failure(traceback.format_exc())
                         raise
                     finally:

@@ -7,7 +7,7 @@ from dataflows import Flow, schema_validator, ValidationError, checkpoint
 
 
 from dgp.core import Config
-from dgp.genera.consts import RESOURCE_NAME
+from dgp.config.consts import RESOURCE_NAME
 
 from .poster import Poster
 
