@@ -94,6 +94,9 @@ class DgpServer(web.Application):
                     task = tasks.pop(0)
                     await asyncio.gather(task)
 
+    def loader_dgps(self, config, context):
+        return []
+
     def publish_flow(self, config, context):
         return [
             self._publish_flow
@@ -131,6 +134,7 @@ class DgpServer(web.Application):
                         config, context,
                         steps=[
                             LoaderDGP,
+                            *self.loader_dgps(config, context),
                             ResultsPoster(config, context, 0, poster, tasks),
                             TransformDGP,
                             ResultsPoster(config, context, 1, poster, tasks),
