@@ -8,7 +8,7 @@ from sqlalchemy.sql import text
 from dataflows import Flow, add_computed_field, dump_to_sql
 
 from dgp.config.consts import CONFIG_TAXONOMY_ID, CONFIG_SHEET, RESOURCE_NAME, \
-    CONFIG_URL, CONFIG_PUBLISH_ALLOWED
+    CONFIG_URL, CONFIG_PUBLISH_ALLOWED, CONFIG_PRIMARY_KEY
 
 
 def clear_by_source(engine: Engine, table_name, source):
@@ -38,7 +38,6 @@ def append_to_primary_key(*fields):
         assert res is not None
         schema = res.setdefault('schema', {})
         schema.setdefault('primaryKey', []).extend(fields)
-        print('append_to_primary_key, descriptor=%r', package.pkg.descriptor)
         yield package.pkg
         yield from package
     return func
@@ -47,6 +46,8 @@ def append_to_primary_key(*fields):
 def publish_flow(config, engine):
     if not config.get(CONFIG_TAXONOMY_ID):
         return None
+    primaryKey = [f.replace(':', '-') for f in config.get(CONFIG_PRIMARY_KEY)]
+    primaryKey.append('_source')
     table_name = config.get(CONFIG_TAXONOMY_ID).replace('-', '_')
     source = config.get(CONFIG_URL)
     if CONFIG_SHEET in config:
@@ -63,7 +64,7 @@ def publish_flow(config, engine):
                 ],
                 resources=RESOURCE_NAME
             ),
-            append_to_primary_key('_source'),
+            append_to_primary_key(primaryKey),
             clear_by_source(engine, table_name, source),
             dump_to_sql(
                 dict([
