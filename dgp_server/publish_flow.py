@@ -64,7 +64,7 @@ def publish_flow(config, engine):
                 ],
                 resources=RESOURCE_NAME
             ),
-            append_to_primary_key(primaryKey),
+            append_to_primary_key(*primaryKey),
             clear_by_source(engine, table_name, source),
             dump_to_sql(
                 dict([
