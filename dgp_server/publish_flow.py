@@ -36,8 +36,9 @@ def append_to_primary_key(*fields):
             if r['name'] == RESOURCE_NAME:
                 res = r
         assert res is not None
-        schema = res.get('schema', {})
+        schema = res.setdefault('schema', {})
         schema.setdefault('primaryKey', []).extend(fields)
+        print('append_to_primary_key, descriptor=%r', package.pkg.descriptor)
         yield package.pkg
         yield from package
     return func
