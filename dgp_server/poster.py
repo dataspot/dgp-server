@@ -29,6 +29,8 @@ class Poster():
         ))
 
     async def post_row(self, phase, index, row, errors=None):
+        if '__errors' in row:
+            errors = row.pop('__errors')
         await self.send(dict(
             t='r',
             p=row,

@@ -16,21 +16,22 @@ from .line_selector import LineSelector
 
 def row_validator(phase, poster: Poster, tasks):
 
-    def wrapped_yielder(it):
-        try:
-            for i in it:
-                yield i
-        except ValidationError as e:
+    def on_error(res_name, row, i, e):
+        if hasattr(e, 'cast_error'):
             errors = list(map(str, e.cast_error.errors))
-            if len(errors) == 0:
-                errors.append(str(e.cast_error))
-            tasks.append(poster.post_row(phase, e.index, e.row,
-                                         errors=errors))
+        elif hasattr(e, 'errors'):
+            errors = e.errors
+        else:
+            errors = []
+        if len(errors) == 0:
+            errors.append(str(e))
+        row['__errors'] = errors
+        return True
 
     def func(package):
         yield package.pkg
         for res in package:
-            yield wrapped_yielder(schema_validator(res.res, res))
+            yield schema_validator(res.res, res, on_error=on_error)
     return func
 
 

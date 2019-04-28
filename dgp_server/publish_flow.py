@@ -38,7 +38,6 @@ def append_to_primary_key(*fields):
         assert res is not None
         schema = res.get('schema', {})
         schema.setdefault('primaryKey', []).extend(fields)
-        print('NEW PRIMARY KEY', package.pkg.descriptor)
         yield package.pkg
         yield from package
     return func

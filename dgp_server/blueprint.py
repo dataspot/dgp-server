@@ -146,7 +146,7 @@ class DgpServer(web.Application):
 
                     try:
                         ret = dgp.analyze()
-                        logging.info('ANALYZED')
+                        logging.info('ANALYZED - success=%r', ret)
                         logging.info('%r', config._unflatten()['source'])
                         logging.info('%r', config._unflatten()['structure'])
                         if config.dirty:
