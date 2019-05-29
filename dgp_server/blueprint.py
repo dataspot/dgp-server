@@ -40,7 +40,7 @@ class ResultsPoster(BaseDataGenusProcessor):
         return post_flow(self.id, self.poster, self.tasks, self.config)
 
 
-class PublishFlow(ResultsPoster):
+class PublishFlow(BaseDataGenusProcessor):
 
     def __init__(self, config, context, lazy_engine, id, poster, tasks):
         super().__init__(config, context, id, poster, tasks)
@@ -55,7 +55,6 @@ class PublishFlow(ResultsPoster):
         if self.lazy_engine() is not None:
             return Flow(
                 publish_flow(self.config, self.lazy_engine()),
-                super().flow()
             )
 
 
@@ -73,7 +72,6 @@ class DgpServer(web.Application):
         self.router.add_route('GET', '/events/{uid}', self.events)
         self.router.add_route('POST', '/config', self.config)
         self.router.add_route('OPTIONS', '/config', self.config_options)
-        self._publish_flow = None
         self.engine = None
 
     # Utils:
@@ -99,7 +97,7 @@ class DgpServer(web.Application):
 
     def publish_flow(self, config, context):
         return [
-            self._publish_flow
+            PublishFlow(config, context, self.lazy_engine())
         ]
 
     def lazy_engine(self):
@@ -125,11 +123,9 @@ class DgpServer(web.Application):
                     taxonomy_registry = TaxonomyRegistry('taxonomies/index.yaml')
                     context = Context(config, taxonomy_registry)
                     poster = Poster(uid, self.sender(resp))
+                    publish_flow = self.publish_flow(config, context) or []
 
                     tasks = []
-                    self._publish_flow = \
-                        PublishFlow(config, context, self.lazy_engine(),
-                                    3, poster, tasks)
                     dgp = SimpleDGP(
                         config, context,
                         steps=[
@@ -140,7 +136,8 @@ class DgpServer(web.Application):
                             ResultsPoster(config, context, 1, poster, tasks),
                             EnricherDGP,
                             ResultsPoster(config, context, 2, poster, tasks),
-                            *self.publish_flow(config, context),
+                            *publish_flow,
+                            ResultsPoster(config, context, 3, poster, tasks),
                         ]
                     )
 
@@ -150,13 +147,19 @@ class DgpServer(web.Application):
                         logging.info('%r', config._unflatten()['source'])
                         logging.info('%r', config._unflatten()['structure'])
                         if config.dirty:
-                            await poster.post_config(config._unflatten())
+                            logging.info('sending config')
+                            to_send = config._unflatten()
+                            to_send.setdefault('publish', {})['allowed'] = False
+                            await poster.post_config(to_send)
                         if not ret:
                             await poster.post_errors(list(map(list, dgp.errors)))
 
+                        logging.info('preparing flow')
                         flow = dgp.flow()
 
+                        logging.info('running flow')
                         await self.run_flow(flow, tasks)
+                        logging.info('flow done')
                     except Exception:
                         await poster.post_failure(traceback.format_exc())
                         raise
