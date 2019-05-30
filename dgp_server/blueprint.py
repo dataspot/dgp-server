@@ -42,11 +42,8 @@ class ResultsPoster(BaseDataGenusProcessor):
 
 class PublishFlow(BaseDataGenusProcessor):
 
-    def __init__(self, config, context, lazy_engine, id, poster, tasks):
-        super().__init__(config, context, id, poster, tasks)
-        self.id = id
-        self.poster = poster
-        self.tasks = tasks
+    def __init__(self, config, context, lazy_engine):
+        super().__init__(config, context)
         self.lazy_engine = lazy_engine
 
     def flow(self):
