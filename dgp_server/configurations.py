@@ -24,11 +24,15 @@ async def configs(request):
     configurations = []
     try:
         async with request.app['db'].acquire() as conn:
-            configurations = await conn.execute(
-                configuration.select()
-            )
-            configurations = await configurations.fetchall()
-            configurations = [dict(x) for x in configurations]
+            try:
+                configurations = await conn.execute(
+                    configuration.select()
+                )
+                configurations = await configurations.fetchall()
+                configurations = [dict(x) for x in configurations]
+            except Exception:
+                meta.create_all(bind=conn)
+                raise
     except Exception:
         logging.exception('EMPTY CONFIGS %r', request.app)
     res = {
