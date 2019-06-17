@@ -1,8 +1,9 @@
+import os
 import logging
 from aiohttp import web
 from sqlalchemy import (
     MetaData, Table, Column,
-    String, JSON
+    String, JSON, create_engine
 )
 
 __all__ = ['configuration']
@@ -31,7 +32,7 @@ async def configs(request):
                 configurations = await configurations.fetchall()
                 configurations = [dict(x) for x in configurations]
             except Exception:
-                meta.create_all(bind=conn)
+                meta.create_all(create_engine(os.environ['DATABASE_URL']))
                 raise
     except Exception:
         logging.exception('EMPTY CONFIGS %r', request.app)
