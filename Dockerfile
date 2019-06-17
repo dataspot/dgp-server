@@ -10,7 +10,7 @@ RUN mkdir -p /var/dgp
 
 FROM build
 
-RUN pip install --no-cache-dir dgp_server==0.0.40
+RUN pip install --no-cache-dir dgp_server==0.0.41
 
 ENV SERVER_MODULE=dgp_server.server:app
 

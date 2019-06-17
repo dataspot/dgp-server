@@ -4,17 +4,16 @@ import os
 import logging
 import yaml
 import traceback
-
-import tableschema_sql
-tableschema_sql.writer.BUFFER_SIZE = 10
-
-from dataflows import Flow
-
+import aiopg.sa
 from aiohttp import web
 from aiohttp_sse import sse_response
 
 from sqlalchemy import create_engine
 
+import tableschema_sql
+tableschema_sql.writer.BUFFER_SIZE = 10
+
+from dataflows import Flow
 
 from dgp.core import Config, Context, BaseDataGenusProcessor
 from dgp.genera import SimpleDGP, LoaderDGP, TransformDGP, EnricherDGP
@@ -24,6 +23,7 @@ from dgp.taxonomies import TaxonomyRegistry
 from .poster import Poster
 from .row_sender import post_flow
 from .publish_flow import publish_flow
+from .configurations import configs, ConfigHeaderMappings
 
 from dataflows.helpers.extended_json import ejson as json
 
@@ -69,7 +69,22 @@ class DgpServer(web.Application):
         self.router.add_route('GET', '/events/{uid}', self.events)
         self.router.add_route('POST', '/config', self.config)
         self.router.add_route('OPTIONS', '/config', self.config_options)
+        self.router.add_get('/configs', configs)
+        self.header_mappings = ConfigHeaderMappings()
         self.engine = None
+        self.on_startup.append(self.init_pg)
+        self.on_cleanup.append(self.close_pg)
+
+    async def init_pg(self, app):
+        if 'DATABASE_URL' in os.environ:
+            engine = await aiopg.sa.create_engine(os.environ['DATABASE_URL'])
+        else:
+            engine = None
+        app['db'] = engine
+
+    async def close_pg(self, app):
+        app['db'].close()
+        await app['db'].wait_closed()
 
     # Utils:
     def path_for_uid(self, uid, *args):
@@ -118,6 +133,8 @@ class DgpServer(web.Application):
                 try:
                     config = Config(self.path_for_uid(uid, 'config.yaml'))
                     taxonomy_registry = TaxonomyRegistry('taxonomies/index.yaml')
+                    for tid, txn in taxonomy_registry.index.items():
+                        txn.header_mapping.update(await self.header_mappings.header_mapping(tid, request))
                     context = Context(config, taxonomy_registry)
                     poster = Poster(uid, self.sender(resp))
                     publish_flow = self.publish_flow(config, context) or []
@@ -156,6 +173,7 @@ class DgpServer(web.Application):
 
                         logging.info('running flow')
                         await self.run_flow(flow, tasks)
+                        await self.header_mappings.refresh(request)
                         logging.info('flow done')
                     except Exception:
                         await poster.post_failure(traceback.format_exc())
