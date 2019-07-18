@@ -1,7 +1,6 @@
 import asyncio
 import uuid
 import os
-import logging
 import yaml
 import traceback
 import aiopg.sa
@@ -24,6 +23,7 @@ from .poster import Poster
 from .row_sender import post_flow
 from .publish_flow import publish_flow
 from .configurations import configs, ConfigHeaderMappings
+from .log import logger
 
 from dataflows.helpers.extended_json import ejson as json
 
@@ -157,24 +157,24 @@ class DgpServer(web.Application):
 
                     try:
                         ret = dgp.analyze()
-                        logging.info('ANALYZED - success=%r', ret)
-                        logging.info('%r', config._unflatten()['source'])
-                        logging.info('%r', config._unflatten()['structure'])
+                        logger.info('ANALYZED - success=%r', ret)
+                        logger.info('%r', config._unflatten()['source'])
+                        logger.info('%r', config._unflatten()['structure'])
                         if config.dirty:
-                            logging.info('sending config')
+                            logger.info('sending config')
                             to_send = config._unflatten()
                             to_send.setdefault('publish', {})['allowed'] = False
                             await poster.post_config(to_send)
                         if not ret:
                             await poster.post_errors(list(map(list, dgp.errors)))
 
-                        logging.info('preparing flow')
+                        logger.info('preparing flow')
                         flow = dgp.flow()
 
-                        logging.info('running flow')
+                        logger.info('running flow')
                         await self.run_flow(flow, tasks)
                         await self.header_mappings.refresh(request)
-                        logging.info('flow done')
+                        logger.info('flow done')
                     except Exception:
                         await poster.post_failure(traceback.format_exc())
                         raise
@@ -182,15 +182,15 @@ class DgpServer(web.Application):
                         for task in tasks:
                             await asyncio.gather(task)
                 except Exception:
-                    logging.exception('Error while executing')
+                    logger.exception('Error while executing')
                 finally:
                     try:
                         await resp.send('close')
                     except Exception as e:
-                        logging.error('Error while closing: %s', e)
+                        logger.error('Error while closing: %s', e)
                     return resp
         except Exception as e:
-            logging.error('Error while finalizing: %s', e)
+            logger.error('Error while finalizing: %s', e)
 
     async def config(self, request: web.Request):
         body = await request.json()

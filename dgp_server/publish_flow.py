@@ -1,4 +1,4 @@
-import logging
+from .log import logger
 
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.engine import Engine
@@ -17,13 +17,13 @@ def clear_by_source(engine: Engine, table_name, source):
         for i, resource in enumerate(package):
             if i == 0:
                 with engine.connect() as conn:
-                    s = text("delete from %s where _source=:source" % table_name)
+                    s = text('delete from "%s" where _source=:source' % table_name)
                     try:
-                        logging.info('DELETING PAST ROWS')
+                        logger.info('DELETING PAST ROWS')
                         conn.execute(s, source=source)
-                        logging.info('DONE DELETING')
+                        logger.info('DONE DELETING')
                     except ProgrammingError as e:
-                        logging.error('Failed to remove rows %s', e)
+                        logger.error('Failed to remove rows %s', e)
             yield resource
 
     return func

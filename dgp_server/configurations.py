@@ -1,10 +1,10 @@
 import os
-import logging
 from aiohttp import web
 from sqlalchemy import (
     MetaData, Table, Column,
     String, JSON, create_engine
 )
+from .log import logger
 
 __all__ = ['configuration']
 
@@ -35,7 +35,7 @@ async def configs(request):
                 meta.create_all(create_engine(os.environ['DATABASE_URL']))
                 raise
     except Exception:
-        logging.exception('EMPTY CONFIGS %r', request.app)
+        logger.exception('EMPTY CONFIGS %r', request.app)
     res = {
         'configurations': configurations
     }
