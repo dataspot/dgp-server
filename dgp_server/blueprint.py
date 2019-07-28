@@ -156,11 +156,21 @@ class DgpServer(web.Application):
                     )
 
                     try:
-                        ret = dgp.analyze()
-                        logger.info('ANALYZED - success=%r', ret)
+                        needs_to_send_config = False
+                        phase = 0
+                        while True:
+                            phase += 1
+                            ret = dgp.analyze()
+                            logger.info('ANALYZED #%d - success=%r',
+                                        phase, ret)
+                            if config.dirty:
+                                needs_to_send_config = True
+                            else:
+                                break
+                            assert phase < 5, 'Too many analysis phases!'
                         logger.info('%r', config._unflatten()['source'])
                         logger.info('%r', config._unflatten()['structure'])
-                        if config.dirty:
+                        if needs_to_send_config:
                             logger.info('sending config')
                             to_send = config._unflatten()
                             to_send.setdefault('publish', {})['allowed'] = False
