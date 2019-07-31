@@ -49,7 +49,10 @@ class ConfigHeaderMappings():
 
     async def header_mapping(self, taxonomy_id, request):
         if not self._header_mappings.get(taxonomy_id):
-            await self.refresh(request)
+            try:
+                await self.refresh(request)
+            except Exception:
+                logger.exception('Failed to read header mappings from configuration, skipping')
         return self._header_mappings.get(taxonomy_id, {})
 
     async def refresh(self, request):
