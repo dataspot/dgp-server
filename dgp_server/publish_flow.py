@@ -82,5 +82,6 @@ def publish_flow(config, engine):
                     })
                 ]),
                 engine=engine,
+                batch_size=10,
             ),
         )
