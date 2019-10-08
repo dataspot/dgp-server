@@ -51,7 +51,7 @@ def append_to_primary_key(*fields):
     return func
 
 
-def publish_flow(config, engine):
+def publish_flow(config, engine, mode='append'):
     if not config.get(CONFIG_TAXONOMY_ID):
         return None
     primaryKey = [f.replace(':', '-') for f in config.get(CONFIG_PRIMARY_KEY)]
@@ -72,16 +72,30 @@ def publish_flow(config, engine):
                 ],
                 resources=RESOURCE_NAME
             ),
-            append_to_primary_key(*primaryKey),
-            clear_by_source(engine, table_name, source),
-            dump_to_sql(
-                dict([
-                    (table_name, {
-                        'resource-name': RESOURCE_NAME,
-                        'mode': 'append'
-                    })
-                ]),
-                engine=engine,
-                batch_size=10,
-            ),
+            *([
+                append_to_primary_key(*primaryKey),
+                clear_by_source(engine, table_name, source),
+                dump_to_sql(
+                    dict([
+                        (table_name, {
+                            'resource-name': RESOURCE_NAME,
+                            'mode': 'append'
+                        })
+                    ]),
+                    engine=engine,
+                    batch_size=10,
+                ),
+            ] if mode == 'append' else [
+                dump_to_sql(
+                    dict([
+                        (table_name, {
+                            'resource-name': RESOURCE_NAME,
+                            'mode': 'update'
+                        })
+                    ]),
+                    engine=engine,
+                    batch_size=10,
+                    use_bloom_filter=False,
+                ),
+            ])
         )

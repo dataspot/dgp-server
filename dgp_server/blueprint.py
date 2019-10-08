@@ -50,8 +50,10 @@ class PublishFlow(BaseDataGenusProcessor):
         if not self.config.get(CONFIG_PUBLISH_ALLOWED):
             return None
         if self.lazy_engine() is not None:
+            txn_config = self.context.taxonomy.config
+            mode = txn_config.get('db-update-mode', 'append')
             return Flow(
-                publish_flow(self.config, self.lazy_engine()),
+                publish_flow(self.config, self.lazy_engine(), mode),
             )
 
 
