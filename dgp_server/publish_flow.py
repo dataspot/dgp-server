@@ -7,8 +7,8 @@ from sqlalchemy.sql import text
 
 from dataflows import Flow, add_computed_field, dump_to_sql
 
-from dgp.config.consts import CONFIG_TAXONOMY_ID, CONFIG_SHEET, RESOURCE_NAME, \
-    CONFIG_URL, CONFIG_PUBLISH_ALLOWED, CONFIG_PRIMARY_KEY
+from dgp.config.consts import CONFIG_TAXONOMY_ID, CONFIG_SHEET, \
+    RESOURCE_NAME, CONFIG_URL, CONFIG_PRIMARY_KEY
 
 
 def clear_by_source(engine: Engine, table_name, source):
