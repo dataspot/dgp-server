@@ -12,24 +12,22 @@ from dgp.config.consts import CONFIG_TAXONOMY_ID, CONFIG_SHEET, \
 
 
 def clear_by_source(engine: Engine, table_name, source):
+    index_name = table_name + '__s'
     def func(package):
         yield package.pkg
         for i, resource in enumerate(package):
             if i == 0:
                 with engine.connect() as conn:
                     s = text('create index concurrently ' +
-                             ':index_name on :table_name (_source)'
-                             ).params(table_name=table_name,
-                                      index_name=table_name + '__s')
+                             f'{index_name} on {table_name} (_source)'))
                     try:
                         logger.info('CREATING INDEX')
                         conn.execute(s)
                         logger.info('DONE CREATING INDEX')
                     except ProgrammingError as e:
                         logger.error('Failed to create index %s', e)
-                    s = text('delete from :table_name where _source=:source'
-                             ).params(table_name=table_name,
-                                      source=source)
+                    s = text(f'delete from {table_name} where _source=:source'
+                             ).params(source=source)
                     try:
                         logger.info('DELETING PAST ROWS')
                         conn.execute(s)
