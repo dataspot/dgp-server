@@ -17,15 +17,22 @@ def clear_by_source(engine: Engine, table_name, source):
         for i, resource in enumerate(package):
             if i == 0:
                 with engine.connect() as conn:
-                    s = text('create index concurrently if not exists ' +
-                             ':index_name on :table_name (_source);' +
-                             'delete from :table_name where _source=:source'
+                    s = text('create index concurrently ' +
+                             ':index_name on :table_name (_source)' +
                              ).params(table_name=table_name,
-                                      index_name=table_name + '__s',
+                                      index_name=table_name + '__s')
+                    try:
+                        logger.info('CREATING INDEX')
+                        conn.execute(s)
+                        logger.info('DONE CREATING INDEX')
+                    except ProgrammingError as e:
+                        logger.error('Failed to create index %s', e)
+                    s = text('delete from :table_name where _source=:source'
+                             ).params(table_name=table_name,
                                       source=source)
                     try:
                         logger.info('DELETING PAST ROWS')
-                        conn.execute(s, source=source)
+                        conn.execute(s)
                         logger.info('DONE DELETING')
                     except ProgrammingError as e:
                         logger.error('Failed to remove rows %s', e)
