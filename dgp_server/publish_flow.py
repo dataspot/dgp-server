@@ -19,7 +19,7 @@ def clear_by_source(engine: Engine, table_name, source):
             if i == 0:
                 with engine.connect() as conn:
                     s = text('create index concurrently ' +
-                             f'{index_name} on {table_name} (_source)'))
+                             f'{index_name} on {table_name} (_source)')
                     try:
                         logger.info('CREATING INDEX')
                         conn.execute(s)
