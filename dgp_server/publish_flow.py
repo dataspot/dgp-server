@@ -18,7 +18,7 @@ def clear_by_source(engine: Engine, table_name, source):
             if i == 0:
                 with engine.connect() as conn:
                     s = text('create index concurrently ' +
-                             ':index_name on :table_name (_source)' +
+                             ':index_name on :table_name (_source)'
                              ).params(table_name=table_name,
                                       index_name=table_name + '__s')
                     try:
