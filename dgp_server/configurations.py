@@ -19,10 +19,9 @@ configuration = Table(
     Column('key_values', JSON, nullable=True),
     Column('config', JSON, nullable=True),
 )
-meta.create_all()
 
 
-async def configs(request):
+async def _configs(request):
     configurations = []
     try:
         async with request.app['db'].acquire() as conn:
@@ -37,6 +36,11 @@ async def configs(request):
                 raise
     except Exception:
         logger.exception('EMPTY CONFIGS %r', request.app)
+    return configurations
+
+
+async def configs(request):
+    configurations = await _configs(request)
     res = {
         'configurations': configurations
     }
@@ -58,11 +62,7 @@ class ConfigHeaderMappings():
 
     async def refresh(self, request):
         async with request.app['db'].acquire() as conn:
-            configurations = await conn.execute(
-                configuration.select()
-            )
-            configurations = await configurations.fetchall()
-            configurations = [dict(x) for x in configurations]
+            configurations = await _configs(request)
             for config in configurations:
                 config = config.get('config', {})
                 taxonomy_id = config.get('taxonomy', {}).get('id')
