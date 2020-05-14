@@ -19,6 +19,7 @@ configuration = Table(
     Column('key_values', JSON, nullable=True),
     Column('config', JSON, nullable=True),
 )
+meta.create_all()
 
 
 async def configs(request):
