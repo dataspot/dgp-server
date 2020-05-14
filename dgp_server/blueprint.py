@@ -106,6 +106,9 @@ class DgpServer(web.Application):
                     task = tasks.pop(0)
                     await asyncio.gather(task)
 
+    def preload_dgps(self, config, context):
+        return []
+
     def loader_dgps(self, config, context):
         return []
 
@@ -145,6 +148,7 @@ class DgpServer(web.Application):
                     dgp = SimpleDGP(
                         config, context,
                         steps=[
+                            *self.preload_dgps(config, context),
                             LoaderDGP,
                             *self.loader_dgps(config, context),
                             ResultsPoster(config, context, 0, poster, tasks),
