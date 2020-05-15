@@ -64,10 +64,11 @@ class DgpServer(web.Application):
         'Access-Control-Allow-Headers': 'Content-Type',
     }
 
-    def __init__(self, base_path, db_url):
+    def __init__(self, base_path, db_url, conf_db_url=None):
         super().__init__()
         self.base_path = base_path
         self.db_url = db_url
+        self.conf_db_url = conf_db_url or db_url
         self.router.add_route('GET', '/events/{uid}', self.events)
         self.router.add_route('POST', '/config', self.config)
         self.router.add_route('OPTIONS', '/config', self.config_options)
@@ -78,10 +79,7 @@ class DgpServer(web.Application):
         self.on_cleanup.append(self.close_pg)
 
     async def init_pg(self, app):
-        if 'DATABASE_URL' in os.environ:
-            engine = await aiopg.sa.create_engine(os.environ['DATABASE_URL'])
-        else:
-            engine = None
+        engine = await aiopg.sa.create_engine(self.conf_db_url)
         app['db'] = engine
 
     async def close_pg(self, app):
