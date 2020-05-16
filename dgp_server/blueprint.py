@@ -73,7 +73,8 @@ class DgpServer(web.Application):
         self.router.add_route('POST', '/config', self.config)
         self.router.add_route('OPTIONS', '/config', self.config_options)
         self.router.add_get('/configs', configs)
-        self.header_mappings = ConfigHeaderMappings()
+        self.taxonomy_registry = TaxonomyRegistry('taxonomies/index.yaml')
+        self.header_mappings = ConfigHeaderMappings(self.taxonomy_registry)
         self.engine = None
         self.on_startup.append(self.init_pg)
         self.on_cleanup.append(self.close_pg)
@@ -135,55 +136,59 @@ class DgpServer(web.Application):
                                     headers=self.CORS_HEADERS) as resp:
                 try:
                     config = Config(self.path_for_uid(uid, 'config.yaml'))
-                    taxonomy_registry = TaxonomyRegistry('taxonomies/index.yaml')
-                    for tid, txn in taxonomy_registry.index.items():
+                    for tid, txn in self.taxonomy_registry.index.items():
                         txn.header_mapping.update(await self.header_mappings.header_mapping(tid, request))
                     context = Context(config, taxonomy_registry)
                     poster = Poster(uid, self.sender(resp))
                     publish_flow = self.publish_flow(config, context) or []
 
                     tasks = []
-                    dgp = SimpleDGP(
-                        config, context,
-                        steps=[
-                            *self.preload_dgps(config, context),
-                            LoaderDGP,
-                            *self.loader_dgps(config, context),
-                            ResultsPoster(config, context, 0, poster, tasks),
-                            TransformDGP,
-                            ResultsPoster(config, context, 1, poster, tasks),
-                            EnricherDGP,
-                            ResultsPoster(config, context, 2, poster, tasks),
-                            *publish_flow,
-                            ResultsPoster(config, context, 3, poster, tasks),
-                        ]
-                    )
 
                     try:
                         needs_to_send_config = False
                         phase = 0
                         while True:
                             phase += 1
+                            dgp = SimpleDGP(
+                                config, context,
+                                steps=[
+                                    *self.preload_dgps(config, context),
+                                    LoaderDGP,
+                                    *self.loader_dgps(config, context),
+                                    ResultsPoster(config, context, 0, poster, tasks),
+                                    TransformDGP,
+                                    ResultsPoster(config, context, 1, poster, tasks),
+                                    EnricherDGP,
+                                    ResultsPoster(config, context, 2, poster, tasks),
+                                    *publish_flow,
+                                    ResultsPoster(config, context, 3, poster, tasks),
+                                ]
+                            )
                             ret = dgp.analyze()
-                            logger.info('ANALYZED #%d - success=%r',
-                                        phase, ret)
+                            logger.info('ANALYZED #%d - success=%r, source=%r',
+                                        phase, ret, config._unflatten().get('source'))
                             if config.dirty:
                                 needs_to_send_config = True
                             else:
                                 break
                             assert phase < 5, 'Too many analysis phases!'
-                        logger.info('%r', config._unflatten()['source'])
-                        logger.info('%r', config._unflatten()['structure'])
+                        logger.info('%r', config._unflatten().get('source'))
+                        logger.info('%r', config._unflatten().get('structure'))
                         if needs_to_send_config:
                             logger.info('sending config')
                             to_send = config._unflatten()
                             to_send.setdefault('publish', {})['allowed'] = False
                             await poster.post_config(to_send)
                         if not ret:
-                            await poster.post_errors(list(map(list, dgp.errors)))
+                            errors = list(map(list, dgp.errors))
+                            logger.warning('analysis errors %s', errors)
+                            await poster.post_errors(errors)
 
                         logger.info('preparing flow')
-                        flow = dgp.flow()
+                        flow = Flow(
+                            dgp.flow(),
+                            lambda row: None
+                        )
 
                         logger.info('running flow')
                         await self.run_flow(flow, tasks)

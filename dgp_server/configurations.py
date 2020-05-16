@@ -49,8 +49,13 @@ async def configs(request):
 
 class ConfigHeaderMappings():
 
-    def __init__(self):
+    def __init__(self, taxonomy_registry):
         self._header_mappings = {}
+        self.columnTypes = {}
+        for txn_id in taxonomy_registry.all_ids():
+            self.columnTypes[txn_id] = {}
+            for column_type in taxonomy_registry.get(txn_id).column_types:
+                self.columnTypes[txn_id][column_type['name']] = column_type
 
     async def header_mapping(self, taxonomy_id, request):
         if not self._header_mappings.get(taxonomy_id):
@@ -76,6 +81,10 @@ class ConfigHeaderMappings():
             for m in mapping:
                 name = m.get('name')
                 columnType = m.get('columnType')
+                columnTypeObj = self.columnTypes[taxonomy_id].get(columnType)
+                if not columnTypeObj:
+                    logger.warning('BAD columnType found: %s', columnType)
+                    continue
                 normalize = m.get('normalize')
                 normalizeTarget = m.get('normalizeTarget')
                 if normalize and normalizeTarget:
@@ -92,3 +101,11 @@ class ConfigHeaderMappings():
                 else:
                     continue
                 self._header_mappings.setdefault(taxonomy_id, {})[name] = h
+                if 'title' in columnTypeObj:
+                    self._header_mappings.setdefault(taxonomy_id, {})[columnTypeObj['title']] = h
+
+        for t_id, mappings in self._header_mappings.items():
+            logger.debug('KNOWN_MAPPING for %s', taxonomy_id)
+            for k, v in mappings.items():
+                logger.debug('\t%s -> %s', k, v)
+
