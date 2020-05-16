@@ -138,7 +138,7 @@ class DgpServer(web.Application):
                     config = Config(self.path_for_uid(uid, 'config.yaml'))
                     for tid, txn in self.taxonomy_registry.index.items():
                         txn.header_mapping.update(await self.header_mappings.header_mapping(tid, request))
-                    context = Context(config, taxonomy_registry)
+                    context = Context(config, self.taxonomy_registry)
                     poster = Poster(uid, self.sender(resp))
                     publish_flow = self.publish_flow(config, context) or []
 
