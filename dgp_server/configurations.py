@@ -81,10 +81,6 @@ class ConfigHeaderMappings():
             for m in mapping:
                 name = m.get('name')
                 columnType = m.get('columnType')
-                columnTypeObj = self.columnTypes[taxonomy_id].get(columnType)
-                if not columnTypeObj:
-                    logger.warning('BAD columnType found: %s', columnType)
-                    continue
                 normalize = m.get('normalize')
                 normalizeTarget = m.get('normalizeTarget')
                 if normalize and normalizeTarget:
@@ -95,6 +91,10 @@ class ConfigHeaderMappings():
                         )
                     )
                 elif columnType:
+                    columnTypeObj = self.columnTypes[taxonomy_id].get(columnType)
+                    if not columnTypeObj:
+                        logger.warning('BAD columnType found: %s', columnType)
+                        continue
                     h = dict(
                         type=columnType
                     )

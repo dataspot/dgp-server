@@ -39,7 +39,7 @@ def row_sender(phase, poster: Poster, tasks):
     ls = LineSelector()
 
     def func(package):
-        resource = next(iter(filter(lambda res: res.name == RESOURCE_NAME, 
+        resource = next(iter(filter(lambda res: res.name == RESOURCE_NAME,
                                     package.pkg.resources)))
         field_names = [f.name for f in resource.schema.fields]
         tasks.append(poster.post_row(phase, -1, field_names))
