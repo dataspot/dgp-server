@@ -48,7 +48,7 @@ def append_to_primary_key(*fields):
         assert res is not None
         schema = res.setdefault('schema', {})
         pk = schema.setdefault('primaryKey', [])
-        for f in pk:
+        for f in fields:
             if f not in pk:
                 pk.append(f)
         yield package.pkg
