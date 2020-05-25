@@ -56,7 +56,7 @@ def append_to_primary_key(*fields):
     return func
 
 
-def publish_flow(config, engine, mode='append'):
+def publish_flow(config, engine, mode='append', fast=False):
     if not config.get(CONFIG_TAXONOMY_ID):
         return None
     primaryKey = [f.replace(':', '-') for f in config.get(CONFIG_PRIMARY_KEY)]
@@ -88,7 +88,7 @@ def publish_flow(config, engine, mode='append'):
                         })
                     ]),
                     engine=engine,
-                    batch_size=10,
+                    batch_size=1000 if fast else 10,
                 ),
             ] if mode == 'append' else [
                 dump_to_sql(
@@ -99,8 +99,8 @@ def publish_flow(config, engine, mode='append'):
                         })
                     ]),
                     engine=engine,
-                    batch_size=10,
-                    use_bloom_filter=False,
+                    batch_size=1000 if fast else 10,
+                    use_bloom_filter=fast,
                 ),
             ])
         )
