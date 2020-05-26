@@ -56,15 +56,20 @@ def append_to_primary_key(*fields):
     return func
 
 
+def get_source(config):
+    source = config.get(CONFIG_URL)
+    if CONFIG_SHEET in config:
+        source += '#sheet-{}'.format(config.get(CONFIG_SHEET))
+    return source
+
+
 def publish_flow(config, engine, mode='append', fast=False):
     if not config.get(CONFIG_TAXONOMY_ID):
         return None
     primaryKey = [f.replace(':', '-') for f in config.get(CONFIG_PRIMARY_KEY)]
     primaryKey.append('_source')
     table_name = config.get(CONFIG_TAXONOMY_ID).replace('-', '_')
-    source = config.get(CONFIG_URL)
-    if CONFIG_SHEET in config:
-        source += '#sheet-{}'.format(config.get(CONFIG_SHEET))
+    source = get_source(config)
     if engine is not None:
         return Flow(
             add_computed_field(
