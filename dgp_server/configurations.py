@@ -72,6 +72,7 @@ class ConfigHeaderMappings():
 
     async def refresh(self, request):
         configurations = await self.fetch(request)
+        taxonomy_id = None
         for config in configurations:
             config = config.get('config', {})
             taxonomy_id = config.get('taxonomy', {}).get('id')
@@ -100,7 +101,8 @@ class ConfigHeaderMappings():
                     continue
                 self._header_mappings.setdefault(taxonomy_id, {})[name] = h
 
-        for t_id, mappings in self._header_mappings.items():
-            logger.debug('KNOWN_MAPPING for %s', taxonomy_id)
-            for k, v in mappings.items():
-                logger.debug('\t%s -> %s', k, v)
+        if taxonomy_id:
+            for t_id, mappings in self._header_mappings.items():
+                logger.debug('KNOWN_MAPPING for %s', taxonomy_id)
+                for k, v in mappings.items():
+                    logger.debug('\t%s -> %s', k, v)
