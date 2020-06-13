@@ -30,12 +30,14 @@ class Poster():
     async def post_row(self, phase, index, row, errors=None):
         if '__errors' in row:
             errors = row.pop('__errors')
+        errors_field = row.pop('__errors_field', None)
         await self.send(dict(
             t='r',
             p=row,
             j=phase,
             i=index,
             e=errors,
+            ef=errors_field,
             uid=self.uid,
         ))
 
