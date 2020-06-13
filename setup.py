@@ -25,7 +25,7 @@ INSTALL_REQUIRES = [
     'gunicorn',
     'aiohttp',
     'aiohttp_sse',
-    'dataflows>=0.0.63',
+    'dataflows>=0.1.1',
     'psycopg2-binary'
 ]
 LINT_REQUIRES = [

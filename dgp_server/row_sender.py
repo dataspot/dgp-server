@@ -16,7 +16,7 @@ from .line_selector import LineSelector
 
 def row_validator(phase, poster: Poster, tasks):
 
-    def on_error(res_name, row, i, e):
+    def on_error(res_name, row, i, e, f):
         if hasattr(e, 'cast_error'):
             errors = list(map(str, e.cast_error.errors))
         elif hasattr(e, 'errors'):
@@ -26,6 +26,7 @@ def row_validator(phase, poster: Poster, tasks):
         if len(errors) == 0:
             errors.append(str(e))
         row['__errors'] = errors
+        row['__errors_field'] = f .name if f is not None else None
         return True
 
     def func(package):
