@@ -2,6 +2,7 @@ import os
 import json
 import hashlib
 import asyncio
+from copy import deepcopy
 
 from dataflows import Flow, schema_validator, ValidationError, checkpoint
 
@@ -58,7 +59,7 @@ def row_sender(phase, poster: Poster, tasks):
                     max_sent = i
                 elif i % 10 == 0:
                     tasks.append(poster.post_row_count(phase, i))
-                yield row
+                yield deepcopy(row)
             for i, row in buffer:
                 if i > max_sent:
                     tasks.append(poster.post_row(phase, i, row))
