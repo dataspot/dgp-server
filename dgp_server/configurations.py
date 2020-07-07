@@ -83,6 +83,8 @@ class ConfigHeaderMappings():
                 continue
             for m in mapping:
                 name = m.get('name')
+                if not name:
+                    continue
                 columnType = m.get('columnType')
                 normalize = m.get('normalize')
                 normalizeTarget = m.get('normalizeTarget')
@@ -100,9 +102,3 @@ class ConfigHeaderMappings():
                 else:
                     continue
                 self._header_mappings.setdefault(taxonomy_id, {})[name] = h
-
-        if taxonomy_id:
-            for t_id, mappings in self._header_mappings.items():
-                logger.debug('KNOWN_MAPPING for %s', taxonomy_id)
-                for k, v in mappings.items():
-                    logger.debug('\t%s -> %s', k, v)
