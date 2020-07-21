@@ -22,7 +22,7 @@ from dgp.taxonomies import TaxonomyRegistry
 from .poster import Poster
 from .row_sender import post_flow
 from .publish_flow import publish_flow
-from .configurations import configs, ConfigHeaderMappings
+from .configurations import configs, ConfigHeaderMappings, ConfigColumnTypes
 from .log import logger
 
 from dataflows.helpers.extended_json import ejson as json
@@ -75,6 +75,7 @@ class DgpServer(web.Application):
         self.router.add_get('/configs', configs)
         self.taxonomy_registry = TaxonomyRegistry('taxonomies/index.yaml')
         self.header_mappings = ConfigHeaderMappings(self.taxonomy_registry)
+        self.column_type_refresher = ConfigColumnTypes(self.taxonomy_registry)
         self.engine = None
         self.on_startup.append(self.init_pg)
         self.on_cleanup.append(self.close_pg)
@@ -133,6 +134,7 @@ class DgpServer(web.Application):
                                     headers=self.CORS_HEADERS) as resp:
                 try:
                     config = Config(self.path_for_uid(uid, 'config.yaml'))
+                    await self.column_type_refresher.refresh(request)
                     for tid, txn in self.taxonomy_registry.index.items():
                         txn.header_mapping.update(await self.header_mappings.header_mapping(tid, request))
                     context = Context(config, self.taxonomy_registry)

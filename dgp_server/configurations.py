@@ -47,6 +47,15 @@ async def configs(request):
     return web.json_response(res)
 
 
+class ConfigColumnTypes():
+
+    def __init__(self, taxonomy_registry):
+        pass
+
+    async def refresh(self, request):
+        pass
+
+
 class ConfigHeaderMappings():
 
     def __init__(self, taxonomy_registry):
