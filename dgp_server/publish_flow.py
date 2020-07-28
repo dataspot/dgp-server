@@ -67,7 +67,6 @@ def publish_flow(config, engine, mode='append', fast=False):
     if not config.get(CONFIG_TAXONOMY_ID):
         return None
     primaryKey = [f.replace(':', '-') for f in config.get(CONFIG_PRIMARY_KEY)]
-    primaryKey.append('_source')
     table_name = config.get(CONFIG_TAXONOMY_ID).replace('-', '_')
     source = get_source(config)
     if engine is not None:
