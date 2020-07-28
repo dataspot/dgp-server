@@ -82,7 +82,7 @@ def publish_flow(config, engine, mode='append', fast=False):
                 resources=RESOURCE_NAME
             ),
             *([
-                append_to_primary_key(*primaryKey),
+                append_to_primary_key(*primaryKey) if len(primaryKey) > 0 else None,
                 clear_by_source(engine, table_name, source),
                 dump_to_sql(
                     dict([
