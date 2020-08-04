@@ -181,7 +181,9 @@ class DgpServer(web.Application):
                         if not ret:
                             errors = list(map(list, dgp.errors))
                             logger.warning('analysis errors %s', errors)
-                            await poster.post_errors(errors)
+                        else:
+                            errors = [] 
+                        await poster.post_errors(errors)
 
                         logger.info('preparing flow')
                         flow = Flow(
