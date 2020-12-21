@@ -1,6 +1,6 @@
 from .log import logger
 
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import DatabaseError
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import text
 
@@ -18,21 +18,23 @@ def clear_by_source(engine: Engine, table_name, source):
         for i, resource in enumerate(package):
             if i == 0:
                 with engine.connect() as conn:
-                    s = text('create index ' +
-                             f'"{index_name}" on "{table_name}" (_source)')
-                    try:
-                        logger.info('CREATING INDEX')
-                        conn.execute(s)
-                        logger.info('DONE CREATING INDEX')
-                    except ProgrammingError as e:
-                        logger.error('Failed to create index %s', e)
+                    if conn.engine.driver != 'pysqlite':
+                        # Create index in DB (unless it's sqlite)
+                        s = text('create index ' +
+                                    f'"{index_name}" on "{table_name}" (_source)')
+                        try:
+                            logger.info('CREATING INDEX')
+                            conn.execute(s)
+                            logger.info('DONE CREATING INDEX')
+                        except DatabaseError as e:
+                            logger.error('Failed to create index %s', e)
                     s = text(f'delete from "{table_name}" where _source=:source'
                              ).params(source=source)
                     try:
                         logger.info('DELETING PAST ROWS')
                         conn.execute(s)
                         logger.info('DONE DELETING')
-                    except ProgrammingError as e:
+                    except DatabaseError as e:
                         logger.error('Failed to remove rows %s', e)
             yield resource
 
