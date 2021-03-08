@@ -3,6 +3,7 @@ from .log import logger
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import text
+from sqlalchemy.engine.base import ResultProxy
 
 
 from dataflows import Flow, add_computed_field, dump_to_sql
@@ -31,9 +32,9 @@ def clear_by_source(engine: Engine, table_name, source):
                     s = text(f'delete from "{table_name}" where _source=:source'
                              ).params(source=source)
                     try:
-                        logger.info('DELETING PAST ROWS')
-                        conn.execute(s)
-                        logger.info('DONE DELETING')
+                        logger.info('DELETING PAST ROWS with source "%s"', source)
+                        result: ResultProxy = conn.execute(s)
+                        logger.info('DONE DELETING, %d rows', result.rowcount)
                     except DatabaseError as e:
                         logger.error('Failed to remove rows %s', e)
             yield resource
