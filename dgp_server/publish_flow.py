@@ -12,8 +12,9 @@ from dgp.config.consts import CONFIG_TAXONOMY_ID, CONFIG_SHEET, \
     RESOURCE_NAME, CONFIG_URL, CONFIG_PRIMARY_KEY
 
 
-def clear_by_source(engine: Engine, table_name, source):
+def clear_by_source(engine: Engine, table_name, value, field_name):
     index_name = table_name + '__s'
+
     def func(package):
         yield package.pkg
         for i, resource in enumerate(package):
@@ -22,17 +23,17 @@ def clear_by_source(engine: Engine, table_name, source):
                     if conn.engine.driver != 'pysqlite':
                         # Create index in DB (unless it's sqlite)
                         s = text('create index ' +
-                                    f'"{index_name}" on "{table_name}" (_source)')
+                                    f'"{index_name}" on "{table_name}" ({field_name})')
                         try:
                             logger.info('CREATING INDEX')
                             conn.execute(s)
                             logger.info('DONE CREATING INDEX')
                         except DatabaseError as e:
                             logger.error('Failed to create index %s', e)
-                    s = text(f'delete from "{table_name}" where _source=:source'
-                             ).params(source=source)
+                    s = text(f'delete from "{table_name}" where {field_name}=:value'
+                             ).params(value=value)
                     try:
-                        logger.info('DELETING PAST ROWS with source "%s"', source)
+                        logger.info('DELETING PAST ROWS with %s "%s"', field_name, value)
                         result: ResultProxy = conn.execute(s)
                         logger.info('DONE DELETING, %d rows', result.rowcount)
                     except DatabaseError as e:
@@ -66,12 +67,13 @@ def get_source(config):
     return source
 
 
-def publish_flow(config, engine, mode='append', fast=False):
+def publish_flow(config, engine, mode='append', fast=False, source=None, source_field_name='_source'):
     if not config.get(CONFIG_TAXONOMY_ID):
         return None
     primaryKey = [f.replace(':', '-') for f in config.get(CONFIG_PRIMARY_KEY)]
     table_name = config.get(CONFIG_TAXONOMY_ID).replace('-', '_')
-    source = get_source(config)
+    if source is None:
+        source = get_source(config)
     if engine is not None:
         return Flow(
             add_computed_field(
@@ -86,7 +88,7 @@ def publish_flow(config, engine, mode='append', fast=False):
             ),
             *([
                 append_to_primary_key(*primaryKey) if len(primaryKey) > 0 else None,
-                clear_by_source(engine, table_name, source),
+                clear_by_source(engine, table_name, source, source_field_name),
                 dump_to_sql(
                     dict([
                         (table_name, {
