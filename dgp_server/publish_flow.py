@@ -3,7 +3,7 @@ from .log import logger
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import text
-from sqlalchemy.engine.base import ResultProxy
+from sqlalchemy.engine import ResultProxy
 
 
 from dataflows import Flow, add_computed_field, dump_to_sql
