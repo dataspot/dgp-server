@@ -14,7 +14,7 @@ tableschema_sql.writer.BUFFER_SIZE = 10
 
 from dataflows import Flow
 
-from dgp.core import Config, Context, BaseDataGenusProcessor
+from dgp.core import Config, Context, BaseDataGenusProcessor, ConfigurableDGP
 from dgp.genera import SimpleDGP, LoaderDGP, PostLoaderDGP, TransformDGP, EnricherDGP
 from dgp.config.consts import CONFIG_PUBLISH_ALLOWED
 from dgp.taxonomies import TaxonomyRegistry
@@ -55,6 +55,13 @@ class PublishFlow(BaseDataGenusProcessor):
             return Flow(
                 publish_flow(self.config, self.lazy_engine(), mode),
             )
+
+
+class PublisherDGP(ConfigurableDGP):
+
+    def init(self):
+        super().init('publishing')
+        self._flows = None
 
 
 class DgpServer(web.Application):
@@ -110,9 +117,11 @@ class DgpServer(web.Application):
         return []
 
     def publish_flow(self, config, context):
-        return [
-            PublishFlow(config, context, self.lazy_engine())
-        ]
+        module = getattr(context.taxonomy, 'publishing')
+        if module and module.has_module():
+            return [ PublisherDGP(config, context) ]
+        else:
+            return [ PublishFlow(config, context, self.lazy_engine()) ]
 
     def lazy_engine(self):
         def func():
