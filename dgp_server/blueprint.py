@@ -117,11 +117,11 @@ class DgpServer(web.Application):
         return []
 
     def publish_flow(self, config, context):
-        module = getattr(context.taxonomy, 'publishing')
-        if module and module.has_module():
-            return [ PublisherDGP(config, context) ]
-        else:
-            return [ PublishFlow(config, context, self.lazy_engine()) ]
+        if context is not None and context.taxonomy is not None:
+            module = getattr(context.taxonomy, 'publishing')
+            if module and module.has_module():
+                return [ PublisherDGP(config, context) ]
+        return [ PublishFlow(config, context, self.lazy_engine()) ]
 
     def lazy_engine(self):
         def func():
