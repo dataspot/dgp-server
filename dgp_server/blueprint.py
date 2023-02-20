@@ -63,6 +63,14 @@ class PublisherDGP(ConfigurableDGP):
         super().init('publishing')
         self._flows = None
 
+    def preflow(self):
+        if self.config.get(CONFIG_PUBLISH_ALLOWED):
+            return super().preflow()
+
+    def flow(self):
+        if self.config.get(CONFIG_PUBLISH_ALLOWED):
+            return super().flow()
+
 
 class DgpServer(web.Application):
 
